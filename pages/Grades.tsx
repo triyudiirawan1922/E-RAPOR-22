@@ -80,7 +80,8 @@ const Grades = ({ user }: { user: User }) => {
 
         // Assign ranks
         const rankedData = classStats.map((item, index) => ({
-            ...item,
+            student: item.student,
+            avg: item.avg,
             rank: index + 1
         }));
 
@@ -292,7 +293,7 @@ const Grades = ({ user }: { user: User }) => {
                 )}
                 <button 
                     onClick={saveAll}
-                    className="bg-red-600 text-white px-6 py-4 rounded-full shadow-xl hover:bg-red-700 hover:scale-105 transition-all font-bold flex items-center gap-2"
+                    className="bg-red-600 text-white px-6 py-4 rounded-lg shadow-xl hover:bg-red-700 hover:scale-105 transition-all font-bold flex items-center gap-2"
                 >
                     <Save size={24} />
                     Simpan Semua

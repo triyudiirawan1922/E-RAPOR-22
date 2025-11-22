@@ -40,11 +40,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         e.preventDefault();
         setError('');
         
-        // Gunakan storageService untuk verifikasi (mendukung ubah password)
         const isValid = storageService.verifyTeacherLogin(teacherClass, teacherPassword);
 
         if (isValid) {
-            // Ambil nama guru dari settings jika ada
             const settings = storageService.getSettings();
             const teacherInfo = settings.teachers?.[teacherClass];
             const displayName = teacherInfo?.name ? teacherInfo.name : `Guru ${teacherClass}`;
@@ -82,29 +80,38 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-900 relative overflow-hidden font-sans">
-            {/* Animated Background Elements */}
+            {/* Optimized Background - No Heavy Images */}
             <div className="absolute inset-0 z-0">
-                <img 
-                    src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop" 
-                    alt="Background" 
-                    className="w-full h-full object-cover opacity-60"
-                />
-                <div className="absolute inset-0 bg-gradient-to-br from-red-900/50 via-slate-900/80 to-slate-950/90 mix-blend-multiply"></div>
+                {/* Base Gradient */}
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950"></div>
+                
+                {/* CSS Grid Pattern */}
+                <div className="absolute inset-0 opacity-20" style={{
+                    backgroundImage: 'linear-gradient(rgba(6, 182, 212, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(6, 182, 212, 0.1) 1px, transparent 1px)',
+                    backgroundSize: '50px 50px'
+                }}></div>
+
+                {/* Reddish Tint Overlay */}
+                <div className="absolute inset-0 bg-red-900/10 mix-blend-overlay pointer-events-none"></div>
+
+                {/* Glowing Orbs */}
+                <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-cyan-600/10 rounded-full blur-[120px]"></div>
+                <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-violet-600/10 rounded-full blur-[120px]"></div>
             </div>
 
-            <div className="glass-panel w-full max-w-lg rounded-2xl shadow-2xl border border-white/10 relative z-10 backdrop-blur-xl p-1">
-                <div className="bg-slate-900/70 rounded-xl p-8">
+            <div className="glass-panel w-full max-w-lg rounded-2xl shadow-2xl border border-white/10 relative z-10 backdrop-blur-xl p-1 m-4">
+                <div className="bg-slate-900/80 rounded-xl p-8">
                     
                     <div className="flex items-center justify-center gap-4 mb-8">
                         <div className="flex flex-col items-center justify-center">
-                            <img src="https://iili.io/fdE9dcF.png" alt="LOGO BANYUASIN" className="h-12 w-auto opacity-80 hover:opacity-100 transition-opacity filter drop-shadow-lg" />
+                            <img src="https://iili.io/fdE9dcF.png" alt="LOGO BANYUASIN" className="h-12 w-auto opacity-90 hover:opacity-100 transition-opacity filter drop-shadow-lg" loading="lazy" />
                         </div>
                         <div className="relative group">
                             <div className="absolute -inset-1 bg-gradient-to-r from-cyan-400 to-violet-600 rounded-full blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
-                            <img src="https://iili.io/fd1ypnV.png" alt="LOGO SDN 22 MP" className="relative h-24 w-auto transform scale-110 z-10 filter drop-shadow-[0_0_15px_rgba(6,182,212,0.5)]" />
+                            <img src="https://iili.io/fd1ypnV.png" alt="LOGO SDN 22 MP" className="relative h-24 w-auto transform scale-110 z-10 filter drop-shadow-[0_0_15px_rgba(6,182,212,0.5)]" loading="lazy" />
                         </div>
                         <div className="flex flex-col items-center justify-center">
-                            <img src="https://iili.io/fd1ybZQ.png" alt="logo tutwuri" className="h-12 w-auto opacity-80 hover:opacity-100 transition-opacity filter drop-shadow-lg" />
+                            <img src="https://iili.io/fd1ybZQ.png" alt="logo tutwuri" className="h-12 w-auto opacity-90 hover:opacity-100 transition-opacity filter drop-shadow-lg" loading="lazy" />
                         </div>
                     </div>
 

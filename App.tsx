@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { User, UserRole } from './types';
 import { storageService } from './services/storageService';
@@ -7,20 +7,32 @@ import {
     LayoutDashboard, Users, FileSpreadsheet, 
     Printer, Settings, LogOut, Menu, X,
     Cpu, Sparkles, ChevronLeft, PanelLeftOpen,
-    Table, UserCog
+    Table, UserCog, Loader2
 } from 'lucide-react';
 
-// Pages
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Students from './pages/Students';
-import Grades from './pages/Grades';
-import Reports from './pages/Reports';
-import Leger from './pages/Leger';
-import AppSettings from './pages/AppSettings';
-import TeacherProfile from './pages/TeacherProfile'; // Import Profile Page
+// Lazy Load Pages untuk performa lebih cepat (Code Splitting)
+const Login = React.lazy(() => import('./pages/Login'));
+const Dashboard = React.lazy(() => import('./pages/Dashboard'));
+const Students = React.lazy(() => import('./pages/Students'));
+const Grades = React.lazy(() => import('./pages/Grades'));
+const Reports = React.lazy(() => import('./pages/Reports'));
+const Leger = React.lazy(() => import('./pages/Leger'));
+const AppSettings = React.lazy(() => import('./pages/AppSettings'));
+const TeacherProfile = React.lazy(() => import('./pages/TeacherProfile'));
 
-const PrivateRoute = ({ children, user }: { children: React.ReactNode, user: User | null }) => {
+const LoadingScreen = () => (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-900 text-cyan-400">
+        <Loader2 size={48} className="animate-spin mb-4" />
+        <p className="font-tech tracking-widest animate-pulse">INITIALIZING SYSTEM...</p>
+    </div>
+);
+
+interface PrivateRouteProps {
+    children: React.ReactNode;
+    user: User | null;
+}
+
+const PrivateRoute = ({ children, user }: PrivateRouteProps) => {
     if (!user) {
         return <Navigate to="/login" replace />;
     }
@@ -53,33 +65,44 @@ function App() {
         localStorage.removeItem('erapor_session');
     };
 
-    if (loading) return null;
+    if (loading) return <LoadingScreen />;
 
     return (
         <HashRouter>
-            <div className="min-h-screen font-sans text-slate-200 bg-slate-900 relative">
-                <div className="fixed inset-0 z-0">
-                    <img 
-                        src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop" 
-                        alt="Background" 
-                        className="w-full h-full object-cover opacity-60"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-br from-red-900/50 via-slate-900/80 to-slate-950/90 mix-blend-multiply"></div>
-                    <div className="absolute inset-0 bg-red-900/10 pointer-events-none"></div>
+            <div className="min-h-screen font-sans text-slate-200 bg-slate-900 relative overflow-hidden">
+                {/* Lightweight CSS Background (No Heavy Images) */}
+                <div className="fixed inset-0 z-0 pointer-events-none">
+                    {/* Base Dark Color */}
+                    <div className="absolute inset-0 bg-slate-950"></div>
+                    
+                    {/* Cyber Grid Pattern */}
+                    <div className="absolute inset-0" style={{
+                        backgroundImage: 'linear-gradient(rgba(6, 182, 212, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(6, 182, 212, 0.05) 1px, transparent 1px)',
+                        backgroundSize: '40px 40px'
+                    }}></div>
+                    
+                    {/* Reddish Glow Overlay (User Request) */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-red-900/20 via-transparent to-slate-900/80"></div>
+                    
+                    {/* Radial Glows */}
+                    <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[100px] -translate-x-1/2 -translate-y-1/2"></div>
+                    <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-violet-500/10 rounded-full blur-[100px] translate-x-1/2 translate-y-1/2"></div>
                 </div>
 
                 <div className="relative z-10">
-                    <Routes>
-                        <Route 
-                            path="/login" 
-                            element={user ? <Navigate to="/" replace /> : <Login onLogin={handleLogin} />} 
-                        />
-                        <Route path="/*" element={
-                            <PrivateRoute user={user}>
-                                <MainLayout user={user!} onLogout={handleLogout} />
-                            </PrivateRoute>
-                        } />
-                    </Routes>
+                    <Suspense fallback={<LoadingScreen />}>
+                        <Routes>
+                            <Route 
+                                path="/login" 
+                                element={user ? <Navigate to="/" replace /> : <Login onLogin={handleLogin} />} 
+                            />
+                            <Route path="/*" element={
+                                <PrivateRoute user={user}>
+                                    <MainLayout user={user!} onLogout={handleLogout} />
+                                </PrivateRoute>
+                            } />
+                        </Routes>
+                    </Suspense>
                 </div>
             </div>
         </HashRouter>
@@ -104,12 +127,10 @@ const MainLayout = ({ user, onLogout }: { user: User, onLogout: () => void }) =>
         { icon: Printer, label: "Cetak Rapor", path: "/reports" },
     ];
 
-    // Menu Khusus Admin
     if (user.role === UserRole.ADMIN) {
         menuItems.push({ icon: Settings, label: "Pengaturan", path: "/settings" });
     }
 
-    // Menu Khusus Guru (Profil Saya)
     if (user.role === UserRole.TEACHER) {
         menuItems.push({ icon: UserCog, label: "Profil Saya", path: "/profile" });
     }
@@ -119,17 +140,14 @@ const MainLayout = ({ user, onLogout }: { user: User, onLogout: () => void }) =>
     const isTeacher = user.role === UserRole.TEACHER;
     const teacherInfo = isTeacher && user.className ? settings.teachers?.[user.className] : null;
     
-    // 1. Logo Logic: Use uploaded Photo if available, otherwise fallback to default
     const brandLogo = (isTeacher && teacherInfo?.photoUrl) 
         ? teacherInfo.photoUrl 
         : "https://iili.io/fd1ypnV.png";
     
-    // 2. Title Logic: "Nama Wali Kelas" OR "Administrator"
     const brandTitle = isTeacher 
         ? (teacherInfo?.name || user.name || "Wali Kelas") 
         : "Administrator";
     
-    // 3. Subtitle Logic: "Kelas XX" OR "System Admin"
     const brandSubtitle = isTeacher 
         ? (user.className || "SDN 22 MP") 
         : "System Admin";
@@ -141,7 +159,7 @@ const MainLayout = ({ user, onLogout }: { user: User, onLogout: () => void }) =>
                 transition-all duration-300 ease-in-out flex flex-col
                 ${sidebarOpen ? 'w-64 translate-x-0' : 'w-64 -translate-x-full md:w-0 md:translate-x-0 md:overflow-hidden'}
             `}>
-                <div className="h-full flex flex-col bg-slate-900/70 w-64 backdrop-blur-md">
+                <div className="h-full flex flex-col bg-slate-900/80 w-64 backdrop-blur-xl">
                     {/* SIDEBAR HEADER */}
                     <div className="p-6 border-b border-white/10 flex items-center justify-between">
                         <div className="flex items-center gap-3 overflow-hidden">
@@ -165,7 +183,7 @@ const MainLayout = ({ user, onLogout }: { user: User, onLogout: () => void }) =>
                         </button>
                     </div>
 
-                    <div className="p-4 flex-1 overflow-y-auto">
+                    <div className="p-4 flex-1 overflow-y-auto custom-scrollbar">
                         <div className="bg-white/5 p-3 rounded-xl border border-white/10 mb-6">
                             <div className="flex items-center gap-2 mb-1">
                                 <Cpu size={12} className="text-violet-400" />
@@ -237,15 +255,21 @@ const MainLayout = ({ user, onLogout }: { user: User, onLogout: () => void }) =>
                 </div>
 
                 <div className="px-4 md:px-8 pb-24 max-w-7xl mx-auto">
-                    <Routes>
-                        <Route path="/" element={<Dashboard user={user} />} />
-                        <Route path="/students" element={<Students user={user} />} />
-                        <Route path="/grades" element={<Grades user={user} />} />
-                        <Route path="/leger" element={<Leger user={user} />} />
-                        <Route path="/reports" element={<Reports user={user} />} />
-                        <Route path="/settings" element={<AppSettings />} />
-                        <Route path="/profile" element={<TeacherProfile user={user} />} />
-                    </Routes>
+                    <Suspense fallback={
+                        <div className="flex justify-center items-center h-64">
+                            <Loader2 className="animate-spin text-cyan-500" size={32} />
+                        </div>
+                    }>
+                        <Routes>
+                            <Route path="/" element={<Dashboard user={user} />} />
+                            <Route path="/students" element={<Students user={user} />} />
+                            <Route path="/grades" element={<Grades user={user} />} />
+                            <Route path="/leger" element={<Leger user={user} />} />
+                            <Route path="/reports" element={<Reports user={user} />} />
+                            <Route path="/settings" element={<AppSettings />} />
+                            <Route path="/profile" element={<TeacherProfile user={user} />} />
+                        </Routes>
+                    </Suspense>
                 </div>
             </main>
 
